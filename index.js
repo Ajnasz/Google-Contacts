@@ -37,13 +37,26 @@ GoogleContacts.prototype.getContacts = function (projection, limit) {
     contacts._getContacts(projection, limit);
   }
 };
+GoogleContacts.prototype.getContactGroups = function (projection, limit) {
+  var contacts = this;
+  if (!contacts.loggedIn) {
+    this.googleAuth.on('login', function () {
+      contacts._getContactGroups(projection, limit);
+    });
+    this.googleAuth.on('loginFailed', function () {
+      console.log('login failed', this.conf);
+    });
+  } else {
+    contacts._getContactGroups(projection, limit);
+  }
+};
 GoogleContacts.prototype._onContactsReceived = function (response, data) {
     this.contacts = JSON.parse(data);
-    this.emit('contactsReceived');
+    this.emit('contactsReceived', this.contacts);
 };
 GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
-    this.contacts = JSON.parse(data);
-    this.emit('contactGroupsReceived');
+    this.contactGroups = JSON.parse(data);
+    this.emit('contactGroupsReceived', this.contactGroups);
 };
 GoogleContacts.prototype._onResponse = function (request, response) {
   var data = '';
@@ -70,6 +83,7 @@ GoogleContacts.prototype._onResponse = function (request, response) {
 };
 GoogleContacts.prototype._get = function (type, projection, limit) {
   var path, params, request;
+  projection = projection || 'thin';
   params = {alt: 'json'};
   limit = parseInt(limit, 10);
   if (!isNaN(limit, 10)) {
