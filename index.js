@@ -2,6 +2,7 @@
 /*global console: true, require: true, exports */
 var EventEmitter = require('events').EventEmitter;
 var GoogleClientLogin = require('googleclientlogin').GoogleClientLogin;
+var util = require('util');
 
 var GoogleContacts = function (conf) {
   var contacts = this;
@@ -14,12 +15,10 @@ var GoogleContacts = function (conf) {
     contacts.loggedIn = true;
   });
   this.client = require('https');
-  this.on('error', function () {
-    console.log('error occured in googlecontacts');
-  });
   this.googleAuth.login();
 };
-GoogleContacts.prototype = new EventEmitter();
+GoogleContacts.prototype = {};
+util.inherits(GoogleContacts, EventEmitter);
 GoogleContacts.prototype.getContacts = function () {
   var contacts = this;
   if (!contacts.loggedIn) {
@@ -33,16 +32,16 @@ GoogleContacts.prototype.getContacts = function () {
     contacts._getContacts();
   }
 };
-GoogleContacts.prototype._onContactsReceived = function (response, resp) {
+GoogleContacts.prototype._onContactsReceived = function (response, data) {
   if (response.statusCode >= 200 && response.statusCode < 300) {
-    this.contacts = JSON.parse(resp);
+    this.contacts = JSON.parse(data);
     this.emit('contactsReceived');
   } else {
-    console.error('data: ', resp);
+    console.error('data: ', data);
   }
 };
 GoogleContacts.prototype._getContacts = function () {
-  var contacts = this, request, onEnd;
+  var contacts = this, request;
 
   request = this.client.request(
     {
@@ -56,18 +55,20 @@ GoogleContacts.prototype._getContacts = function () {
       }
     },
     function (response) {
-      var resp = '';
+      var data = '';
 
-      response.on('data', function (data) {
-        resp += data;
+      response.on('data', function (chunk) {
+        data += chunk;
       });
 
       response.on('error', function (e) {
         console.error('an error occured getting contacts', e);
       });
 
-      response.on('end', this._onContactsReceived.bind(this));
-    }
+      response.on('end', function () {
+        this._onContactsReceived(response, data);
+      }.bind(this));
+    }.bind(this)
   );
   request.end();
 };
