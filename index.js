@@ -64,7 +64,7 @@ GoogleContacts.prototype._onResponse = function (request, response) {
         this._onContactGroupsReceived(response, data);
       }
     } else {
-      this.emit('error', 'Bad response status');
+      this.emit('error', 'Bad response status ' + data);
     }
   }.bind(this));
 };
