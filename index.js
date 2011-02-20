@@ -81,14 +81,11 @@ GoogleContacts.prototype._onResponse = function (request, response) {
     }
   }.bind(this));
 };
-GoogleContacts.prototype._get = function (type, projection, limit) {
+GoogleContacts.prototype._get = function (type, projection, params) {
   var path, params, request;
+  params = params || {};
+  params.alt = 'json';
   projection = projection || 'thin';
-  params = {alt: 'json'};
-  limit = parseInt(limit, 10);
-  if (!isNaN(limit, 10)) {
-    params['max-results'] = limit;
-  }
 
   path = type === 'groups' ? contactGroupsUrl : contactsUrl;
   path += this.conf.email + '/' + projection + '?' + querystring.stringify(params);
@@ -109,10 +106,10 @@ GoogleContacts.prototype._get = function (type, projection, limit) {
   );
   request.end();
 };
-GoogleContacts.prototype._getContacts = function (projection, limit) {
-  this._get('contacts', projection, limit);
+GoogleContacts.prototype._getContacts = function (projection, params) {
+  this._get('contacts', projection, params);
 };
-GoogleContacts.prototype._getContactGroups = function (projection, limit) {
-  this._get('groups', projection, limit);
+GoogleContacts.prototype._getContactGroups = function (projection, params) {
+  this._get('groups', projection, params);
 };
 exports.GoogleContacts = GoogleContacts;
