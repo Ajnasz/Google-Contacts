@@ -26,4 +26,4 @@ getContacts and getContactGroups has two optional parameter:
 http://code.google.com/apis/contacts/docs/3.0/reference.html#Projections
 limit max how many elements do you wan't to receive
 
-other criteries coming soon..
+other functionallities coming soon..
