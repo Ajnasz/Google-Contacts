@@ -6,49 +6,48 @@ var util = require('util');
 var querystring = require('querystring');
 
 const contactsUrl = '/m8/feeds/contacts/',
-      contactGroupsUrl = '/m8/feeds/groups/';
+      contactGroupsUrl = '/m8/feeds/groups/',
+      typeContacts = 'contacts',
+      typeGroups = 'groups',
+      projectionThin = 'thin';
 
 var GoogleContacts = function (conf) {
   var contacts = this;
   this.conf = conf || {};
   this.conf.service = 'contacts';
-  this.googleAuth = new GoogleClientLogin(this.conf);
-  this.googleAuth.on('error', function () {
-    console.error('an error occured on auth');
-  });
-  this.googleAuth.on('login', function () {
-    contacts.loggedIn = true;
-  });
-  this.client = require('https');
-  this.googleAuth.login();
 };
+
 GoogleContacts.prototype = {};
 util.inherits(GoogleContacts, EventEmitter);
-GoogleContacts.prototype.getContacts = function (projection, limit) {
-  var contacts = this;
-  if (!contacts.loggedIn) {
+
+GoogleContacts.prototype.auth = function (cb) {
+  if (!this.googleAuth) {
+    this.googleAuth = new GoogleClientLogin(this.conf);
     this.googleAuth.on('login', function () {
-      contacts._getContacts(projection, limit);
-    });
-    this.googleAuth.on('loginFailed', function () {
-      console.log('login failed', this.conf);
-    });
-  } else {
-    contacts._getContacts(projection, limit);
+      this.isLoggedIn = true;
+    }.bind(this));
   }
+  if (!this.isLoggedIn) {
+    this.googleAuth.on('login', function () {
+      cb();
+    }.bind(this));
+    this.googleAuth.on('error', function () {
+      this.emit('error', 'login failed');
+    });
+    this.googleAuth.login();
+  } else {
+    cb();
+  }
+},
+GoogleContacts.prototype.getContacts = function (params) {
+  this.auth(function () {
+    this._getContacts(params);
+  }.bind(this));
 };
 GoogleContacts.prototype.getContactGroups = function (projection, limit) {
-  var contacts = this;
-  if (!contacts.loggedIn) {
-    this.googleAuth.on('login', function () {
-      contacts._getContactGroups(projection, limit);
-    });
-    this.googleAuth.on('loginFailed', function () {
-      console.log('login failed', this.conf);
-    });
-  } else {
-    contacts._getContactGroups(projection, limit);
-  }
+  this.auth(function () {
+    this._getContactGroups(projection, limit);
+  }.bind(this));
 };
 GoogleContacts.prototype._onContactsReceived = function (response, data) {
     this.contacts = JSON.parse(data);
@@ -60,7 +59,6 @@ GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
 };
 GoogleContacts.prototype._onResponse = function (request, response) {
   var data = '';
-
   response.on('data', function (chunk) {
     data += chunk;
   });
@@ -70,6 +68,7 @@ GoogleContacts.prototype._onResponse = function (request, response) {
   }.bind(this));
 
   response.on('end', function () {
+    // console.log('response end', data, response);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (request.path.indexOf(contactsUrl) === 0) {
         this._onContactsReceived(response, data);
@@ -81,35 +80,43 @@ GoogleContacts.prototype._onResponse = function (request, response) {
     }
   }.bind(this));
 };
-GoogleContacts.prototype._get = function (type, projection, params) {
-  var path, params, request;
+GoogleContacts.prototype._buildPath = function (type, params) {
+  var path, request;
   params = params || {};
   params.alt = 'json';
-  projection = projection || 'thin';
+  var projection = 'thin';
+  if (params.projection) {
+    projection = params.projection;
+    delete params.projection;
+  }
 
   path = type === 'groups' ? contactGroupsUrl : contactsUrl;
   path += this.conf.email + '/' + projection + '?' + querystring.stringify(params);
-  request = this.client.request(
+  return path;
+};
+GoogleContacts.prototype._get = function (type, params) {
+  request = require('https').request(
     {
       host: 'www.google.com',
       port: 443,
-      path: path,
+      path: this._buildPath(type, params),
       method: 'GET',
       headers: {
-        'Authorization': 'GoogleLogin auth=' + this.googleAuth.getAuthId(),
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Authorization': 'GoogleLogin auth=' + this.googleAuth.getAuthId()
       }
     },
     function (response) {
       this._onResponse(request, response);
     }.bind(this)
-  );
+  ).on('error', function (e) {
+    // console.log('error getting stuff', e);
+  });
   request.end();
 };
-GoogleContacts.prototype._getContacts = function (projection, params) {
-  this._get('contacts', projection, params);
+GoogleContacts.prototype._getContacts = function (params) {
+  this._get(typeContacts, params);
 };
 GoogleContacts.prototype._getContactGroups = function (projection, params) {
-  this._get('groups', projection, params);
+  this._get(typeGroups, params);
 };
 exports.GoogleContacts = GoogleContacts;
