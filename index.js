@@ -90,12 +90,12 @@ GoogleContacts.prototype._buildPath = function (type, params) {
     delete params.projection;
   }
 
-  path = type === 'groups' ? contactGroupsUrl : contactsUrl;
+  path = type === typeGroups ? contactGroupsUrl : contactsUrl;
   path += this.conf.email + '/' + projection + '?' + querystring.stringify(params);
   return path;
 };
 GoogleContacts.prototype._get = function (type, params) {
-  request = require('https').request(
+  var request = require('https').request(
     {
       host: 'www.google.com',
       port: 443,
