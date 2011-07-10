@@ -58,7 +58,24 @@ GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
     this.emit('contactGroupsReceived', this.contactGroups);
 };
 GoogleContacts.prototype._onResponse = function (request, response) {
-  var data = '';
+  var data = '', finished = false;
+  // Thats a hack, because the end event is not emitted, but close yes.
+  // https://github.com/joyent/node/issues/728
+  var onFinish = function () {
+    if (!finished) {
+      finished = true;
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (request.path.indexOf(contactsUrl) === 0) {
+          this._onContactsReceived(response, data);
+        } else if (request.path.indexOf(contactGroupsUrl) === 0) {
+          this._onContactGroupsReceived(response, data);
+        }
+      } else {
+        var error = new Error('Bad response status: ' + response.statusCode);
+        this.emit('error', error);
+      }
+    }
+  }.bind(this);
   response.on('data', function (chunk) {
     data += chunk;
   });
@@ -67,24 +84,14 @@ GoogleContacts.prototype._onResponse = function (request, response) {
     this.emit('error', e);
   }.bind(this));
 
-  response.on('end', function () {
-    // console.log('response end', data, response);
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (request.path.indexOf(contactsUrl) === 0) {
-        this._onContactsReceived(response, data);
-      } else if (request.path.indexOf(contactGroupsUrl) === 0) {
-        this._onContactGroupsReceived(response, data);
-      }
-    } else {
-      this.emit('error', 'Bad response status ' + data);
-    }
-  }.bind(this));
+  response.on('close', onFinish);
+  response.on('end', onFinish);
 };
 GoogleContacts.prototype._buildPath = function (type, params) {
   var path, request;
   params = params || {};
   params.alt = 'json';
-  var projection = 'thin';
+  var projection = projectionThin;
   if (params.projection) {
     projection = params.projection;
     delete params.projection;
