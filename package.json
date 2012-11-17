@@ -19,7 +19,8 @@
     "api"
   ],
   "dependencies": {
-    "googleclientlogin": ""
+    "googleclientlogin": "",
+    "xml2js": ""
   },
   "author": "Ajnasz <ajnasz@ajnasz.hu>",
   "license": "MIT"

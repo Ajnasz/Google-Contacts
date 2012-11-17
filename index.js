@@ -3,12 +3,13 @@
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 var querystring = require('querystring');
+var parser = new (require('xml2js').Parser)();
 
-const contactsUrl = '/m8/feeds/contacts/',
+var contactsUrl = '/m8/feeds/contacts/',
       contactGroupsUrl = '/m8/feeds/groups/',
       typeContacts = 'contacts',
       typeGroups = 'groups',
-      projectionFull = 'full';
+      projectionFull = 'full',
       projectionThin = 'thin';
 
 var GoogleContacts = function (conf) {
@@ -23,12 +24,25 @@ util.inherits(GoogleContacts, EventEmitter);
 GoogleContacts.prototype._onContactsReceived = function (response, data) {
   //@todo: oops, response is in XML.. figure out how to get JSON or
   //simply parse as xml
-    this.contacts = JSON.parse(data);
-    this.emit('contactsReceived', this.contacts);
+
+  //PARSE XML HERE!!
+  var self = this;
+  parser.parseString(data, function (err, contacts) {
+    if (err) throw err;
+    self.contacts = contacts;
+    self.emit('contactsReceived', contacts);
+  });
+  //this.contacts = JSON.parse(data);
 };
 GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
-    this.contactGroups = JSON.parse(data);
-    this.emit('contactGroupsReceived', this.contactGroups);
+  var self = this;
+  parser.parseString(data, function (err, contactGroups) {
+    if (err) throw err;
+    self.contactGroups = contactGroups;
+    self.emit('contactGroupsReceived', contactGroups);
+  });
+  //this.contactGroups = JSON.parse(data);
+  //this.emit('contactGroupsReceived', this.contactGroups);
 };
 GoogleContacts.prototype._onResponse = function (request, response) {
   var data = '', finished = false;
@@ -44,14 +58,14 @@ GoogleContacts.prototype._onResponse = function (request, response) {
           this._onContactGroupsReceived(response, data);
         }
       } else {
-        console.log(response.headers);
+        //console.log(response);
         var error = new Error('Bad client request status: ' + response.statusCode);
         this.emit('error', error);
       }
     }
   }.bind(this);
   response.on('data', function (chunk) {
-    console.log(chunk.toString());
+    //console.log(chunk.toString());
     data += chunk;
   });
 
@@ -87,7 +101,7 @@ GoogleContacts.prototype._get = function (type, params) {
         'Authorization': 'OAuth ' + this.conf.token 
       }
   };
-  console.log(req)
+  //console.log(req)
   var request = require('https').request(req,
     function (response) {
       this._onResponse(request, response);
