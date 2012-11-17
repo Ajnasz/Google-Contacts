@@ -1,5 +1,13 @@
-/*jslint indent: 2 */
-/*global console: true, require: true, exports */
+/**
+ * @todo: recursively send requests until all contacts are fetched
+ *
+ * @see https://developers.google.com/google-apps/contacts/v3/reference#ContactsFeed
+ *
+ * Note: The Contacts API has a hard limit to the number of results it can return at a 
+ * time even if you explicitly request all possible results. If the requested feed has 
+ * more fields than can be returned in a single response, the API truncates the feed and adds 
+ * a "Next" link that allows you to request the rest of the response.
+ */
 var EventEmitter = require('events').EventEmitter;
 var qs = require('querystring');
 var util = require('util');
@@ -75,7 +83,7 @@ GoogleContacts.prototype._buildPath = function (type, params) {
   var path, request;
   params = params || {};
   params.alt = 'json';
-  var projection = projectionFull;
+  var projection = projectionThin;
   if (params.projection) {
     projection = params.projection;
     delete params.projection;
