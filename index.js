@@ -1,9 +1,10 @@
 /*jslint indent: 2 */
 /*global console: true, require: true, exports */
 var EventEmitter = require('events').EventEmitter;
+var qs = require('querystring');
 var util = require('util');
 var querystring = require('querystring');
-var parser = new (require('xml2js').Parser)();
+//var parser = new (require('xml2js').Parser)();
 
 var contactsUrl = '/m8/feeds/contacts/',
       contactGroupsUrl = '/m8/feeds/groups/',
@@ -24,25 +25,19 @@ util.inherits(GoogleContacts, EventEmitter);
 GoogleContacts.prototype._onContactsReceived = function (response, data) {
   //@todo: oops, response is in XML.. figure out how to get JSON or
   //simply parse as xml
-
+//console.log(data);
   //PARSE XML HERE!!
-  var self = this;
-  parser.parseString(data, function (err, contacts) {
-    if (err) throw err;
-    self.contacts = contacts;
-    self.emit('contactsReceived', contacts);
-  });
-  //this.contacts = JSON.parse(data);
+  //parser.parseString(data, function (err, contacts) {
+    //if (err) throw err;
+    //self.contacts = contacts;
+    //self.emit('contactsReceived', contacts);
+  //});
+  this.contacts = JSON.parse(data);
+  this.emit('contactsReceived', this.contacts);
 };
 GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
-  var self = this;
-  parser.parseString(data, function (err, contactGroups) {
-    if (err) throw err;
-    self.contactGroups = contactGroups;
-    self.emit('contactGroupsReceived', contactGroups);
-  });
-  //this.contactGroups = JSON.parse(data);
-  //this.emit('contactGroupsReceived', this.contactGroups);
+  this.contactGroups = JSON.parse(data);
+  this.emit('contactGroupsReceived', this.contactGroups);
 };
 GoogleContacts.prototype._onResponse = function (request, response) {
   var data = '', finished = false;
@@ -95,19 +90,20 @@ GoogleContacts.prototype._get = function (type, params) {
   var req = {
       host: 'www.google.com',
       port: 443,
-      path: this._buildPath(type, params),
+      path: this._buildPath(type, params) + qs.stringify({ alt: 'json' }),
       method: 'GET',
       headers: {
         'Authorization': 'OAuth ' + this.conf.token 
       }
+      
   };
-  //console.log(req)
+  console.log(req)
   var request = require('https').request(req,
     function (response) {
       this._onResponse(request, response);
     }.bind(this)
   ).on('error', function (e) {
-    // console.log('error getting stuff', e);
+    console.log('error getting stuff', e);
   });
   request.end();
 };
