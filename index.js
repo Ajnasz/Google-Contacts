@@ -3,122 +3,151 @@
  *
  * @see https://developers.google.com/google-apps/contacts/v3/reference#ContactsFeed
  *
+ * To API test requests: 
+ *
+ * @see https://developers.google.com/oauthplayground/
+ *
+ * To format JSON nicely:
+ *
+ * @see http://jsonviewer.stack.hu/
+ *
  * Note: The Contacts API has a hard limit to the number of results it can return at a 
  * time even if you explicitly request all possible results. If the requested feed has 
  * more fields than can be returned in a single response, the API truncates the feed and adds 
  * a "Next" link that allows you to request the rest of the response.
  */
-var EventEmitter = require('events').EventEmitter;
-var qs = require('querystring');
-var util = require('util');
-var querystring = require('querystring');
-//var parser = new (require('xml2js').Parser)();
+var EventEmitter = require('events').EventEmitter,
+  qs = require('querystring'),
+  util = require('util'),
+  url = require('url'),
+  https = require('https'),
+  querystring = require('querystring');
 
-var contactsUrl = '/m8/feeds/contacts/',
-      contactGroupsUrl = '/m8/feeds/groups/',
-      typeContacts = 'contacts',
-      typeGroups = 'groups',
-      projectionFull = 'full',
-      projectionThin = 'thin';
-
-var GoogleContacts = function (conf) {
-  var contacts = this;
-  this.conf = conf || {};
-  this.conf.service = 'contacts';
+var GoogleContacts = function (token) {
+  this.contacts = [];
+  this.token = token;
 };
 
 GoogleContacts.prototype = {};
+
 util.inherits(GoogleContacts, EventEmitter);
 
-GoogleContacts.prototype._onContactsReceived = function (response, data) {
-  //@todo: oops, response is in XML.. figure out how to get JSON or
-  //simply parse as xml
-//console.log(data);
-  //PARSE XML HERE!!
-  //parser.parseString(data, function (err, contacts) {
-    //if (err) throw err;
-    //self.contacts = contacts;
-    //self.emit('contactsReceived', contacts);
-  //});
-  this.contacts = JSON.parse(data);
-  this.emit('contactsReceived', this.contacts);
-};
-GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
-  this.contactGroups = JSON.parse(data);
-  this.emit('contactGroupsReceived', this.contactGroups);
-};
-GoogleContacts.prototype._onResponse = function (request, response) {
-  var data = '', finished = false;
-  // Thats a hack, because the end event is not emitted, but close yes.
-  // https://github.com/joyent/node/issues/728
-  var onFinish = function () {
-    if (!finished) {
-      finished = true;
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (request.path.indexOf(contactsUrl) === 0) {
-          this._onContactsReceived(response, data);
-        } else if (request.path.indexOf(contactGroupsUrl) === 0) {
-          this._onContactGroupsReceived(response, data);
-        }
-      } else {
-        //console.log(response);
-        var error = new Error('Bad client request status: ' + response.statusCode);
-        this.emit('error', error);
-      }
-    }
-  }.bind(this);
-  response.on('data', function (chunk) {
-    //console.log(chunk.toString());
-    data += chunk;
-  });
 
-  response.on('error', function (e) {
-    this.emit('error', e);
-  }.bind(this));
+GoogleContacts.prototype._get = function (params, cb) {
+  var self = this;
 
-  response.on('close', onFinish);
-  response.on('end', onFinish);
-};
-GoogleContacts.prototype._buildPath = function (type, params) {
-  var path, request;
-  params = params || {};
-  params.alt = 'json';
-  var projection = projectionThin;
-  if (params.projection) {
-    projection = params.projection;
-    delete params.projection;
+  if (typeof params === 'function') {
+    cb = params;
+    params = {};
   }
 
-  var email = 'default';
-  path = type === typeGroups ? contactGroupsUrl : contactsUrl;
-  path += email + '/' + projection + '?' + querystring.stringify(params);
+  var req = {
+    host: 'www.google.com',
+    port: 443,
+    path: this._buildPath(params),
+    method: 'GET',
+    headers: {
+      'Authorization': 'OAuth ' + this.token 
+    }
+  };
+
+  console.log(req);
+
+  https.request(req, function (res) {
+    var data = '';
+
+    res.on('end', function () {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        var error = new Error('Bad client request status: ' + res.statusCode);
+        return cb(error);
+      }
+      try {
+        data = JSON.parse(data);
+        cb(null, data);
+      }
+      catch (err) {
+        cb(err);
+      }
+    });
+
+    res.on('data', function (chunk) {
+      //console.log(chunk.toString());
+      data += chunk;
+    });
+
+    res.on('error', function (err) {
+      cb(err);
+    });
+
+    //res.on('close', onFinish);
+  }).on('error', function (err) {
+    cb(err);
+  }).end();
+};
+
+GoogleContacts.prototype.getContacts = function (cb, contacts) {
+  var self = this;
+
+  this._get({ type: 'contacts' }, receivedContacts);
+           
+  function receivedContacts(err, data) {
+    if (err) return cb(err);
+
+    self._saveContactsFromFeed(data.feed);
+
+    var next = false;
+    data.feed.link.forEach(function (link) {
+      if (link.rel === 'next') {
+        next = true;
+        var path = url.parse(link.href).path;
+        self._get({ path: path }, receivedContacts);
+      }
+    });
+    if (!next) {
+      cb(null, self.contacts);
+    }
+  };
+};
+
+GoogleContacts.prototype._saveContactsFromFeed = function (feed) {
+  var self = this;
+  //console.log(feed);
+  feed.entry.forEach(function (entry) {
+    try {
+      var name = entry.title['$t'];
+      var email = entry['gd$email'][0].address; // only save first email
+      self.contacts.push({ name: name, email: email });
+    }
+    catch (e) {
+      // property not available...
+    }
+  });
+  console.log(self.contacts);
+  console.log(self.contacts.length);
+}
+
+GoogleContacts.prototype._buildPath = function (params) {
+  if (params.path) return params.path;
+
+  params = params || {};
+  params.type = params.type || 'contacts';
+  params.alt = params.alt || 'json';
+  params.projection = params.projection || 'thin';
+  params.email = params.email || 'default';
+  params['max-results'] = params['max-results'] || 2000;
+
+  var query = {
+    alt: params.alt,
+    'max-results': params['max-results']
+  };
+
+  var path = '/m8/feeds/';
+  path += params.type + '/';
+  path += params.email + '/'; 
+  path += params.projection;
+  path += '?' + qs.stringify(query);
+
   return path;
 };
-GoogleContacts.prototype._get = function (type, params) {
-  var req = {
-      host: 'www.google.com',
-      port: 443,
-      path: this._buildPath(type, params) + qs.stringify({ alt: 'json' }),
-      method: 'GET',
-      headers: {
-        'Authorization': 'OAuth ' + this.conf.token 
-      }
-      
-  };
-  console.log(req)
-  var request = require('https').request(req,
-    function (response) {
-      this._onResponse(request, response);
-    }.bind(this)
-  ).on('error', function (e) {
-    console.log('error getting stuff', e);
-  });
-  request.end();
-};
-GoogleContacts.prototype.getContacts = function (params) {
-  this._get(typeContacts, params);
-};
-GoogleContacts.prototype.getContactGroups = function (projection, params) {
-  this._get(typeGroups, params);
-};
+
 exports.GoogleContacts = GoogleContacts;
