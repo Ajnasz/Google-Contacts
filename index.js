@@ -17,15 +17,26 @@
  * a "Next" link that allows you to request the rest of the response.
  */
 var EventEmitter = require('events').EventEmitter,
+  _ = require('underscore'),
   qs = require('querystring'),
   util = require('util'),
   url = require('url'),
   https = require('https'),
   querystring = require('querystring');
 
-var GoogleContacts = function (token) {
+var GoogleContacts = function (opts) {
+  if (typeof opts === 'string') {
+    opts = { token: opts }
+  }
+  if (!opts) {
+    opts = {};
+  }
+
   this.contacts = [];
-  this.token = token;
+  this.consumerKey = opts.consumerKey ? opts.consumerKey : null;
+  this.consumerSecret = opts.consumerSecret ? opts.consumerSecret : null;
+  this.token = opts.token ? opts.token : null;
+  this.refreshToken = opts.refreshToken ? opts.refreshToken : null;
 };
 
 GoogleContacts.prototype = {};
@@ -89,7 +100,6 @@ GoogleContacts.prototype.getContacts = function (cb, contacts) {
   var self = this;
 
   this._get({ type: 'contacts' }, receivedContacts);
-           
   function receivedContacts(err, data) {
     if (err) return cb(err);
 
@@ -149,5 +159,70 @@ GoogleContacts.prototype._buildPath = function (params) {
 
   return path;
 };
+
+GoogleContacts.prototype.refreshAccessToken = function (refreshToken, cb) {
+  if (typeof params === 'function') {
+    cb = params;
+    params = {};
+  }
+
+  var data = {
+    refresh_token: refreshToken,
+    client_id: this.consumerKey,
+    client_secret: this.consumerSecret,
+    grant_type: 'refresh_token'
+
+  }
+
+  var body = qs.stringify(data);
+
+  var opts = {
+    host: 'accounts.google.com',
+    port: 443,
+    path: '/o/oauth2/token',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Length': body.length
+    }
+  };
+
+  //console.log(opts);
+  //console.log(data);
+
+  var req = https.request(opts, function (res) {
+    var data = '';
+    res.on('end', function () {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        var error = new Error('Bad client request status: ' + res.statusCode);
+        return cb(error);
+      }
+      try {
+        data = JSON.parse(data);
+        //console.log(data);
+        cb(null, data.access_token);
+      }
+      catch (err) {
+        cb(err);
+      }
+    });
+
+    res.on('data', function (chunk) {
+      //console.log(chunk.toString());
+      data += chunk;
+    });
+
+    res.on('error', function (err) {
+      cb(err);
+    });
+
+    //res.on('close', onFinish);
+  }).on('error', function (err) {
+    cb(err);
+  });
+
+  req.write(body);
+  req.end();
+}
 
 exports.GoogleContacts = GoogleContacts;
