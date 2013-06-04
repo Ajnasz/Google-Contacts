@@ -17,8 +17,14 @@ c.on('contactsReceived', function (contacts) {
 c.on('contactGroupsReceived', function (contactGroups) {
     console.log('groups: ' + contactGroups);
 });
-c.getContacts('thin', 100);
-c.getContactGroups('thin', 200);
+c.getContacts({
+    projection: 'thin',
+    limit: 100
+});
+c.getContactGroups({
+    projection: 'thin',
+    limit: 200
+});
 
 
 getContacts and getContactGroups has two optional parameter:
