@@ -4,9 +4,10 @@ var EventEmitter = require('events').EventEmitter;
 var GoogleClientLogin = require('googleclientlogin').GoogleClientLogin;
 var util = require('util');
 var querystring = require('querystring');
+var url = require('url');
 
-var  contactsUrl = '/m8/feeds/contacts/',
-  contactGroupsUrl = '/m8/feeds/groups/',
+var contactsUrl = '/m8/feeds/contacts',
+  contactGroupsUrl = '/m8/feeds/groups',
   typeContacts = 'contacts',
   typeGroups = 'groups',
   projectionThin = 'thin';
@@ -88,8 +89,9 @@ GoogleContacts.prototype._onResponse = function (request, response) {
   response.on('end', onFinish);
 };
 GoogleContacts.prototype._buildPath = function (type, params) {
-  var path, request, projection;
+  var path, request, projection, pathItems;
   params = params || {};
+  pathItems = [];
   params.alt = 'json';
   projection = projectionThin;
 
@@ -98,8 +100,15 @@ GoogleContacts.prototype._buildPath = function (type, params) {
     delete params.projection;
   }
 
-  path = type === typeGroups ? contactGroupsUrl : contactsUrl;
-  path += this.conf.email + '/' + projection + '?' + querystring.stringify(params);
+  pathItems.push(type === typeGroups ? contactGroupsUrl : contactsUrl);
+  pathItems.push(this.conf.email);
+  pathItems.push(projection);
+  path = url.format({
+    pathname: url.resolve('/', pathItems.join('/')),
+    search: '?' + querystring.stringify(params)
+
+  });
+  // path += this.conf.email + '/' + projection + '?' + querystring.stringify(params);
   return path;
 };
 GoogleContacts.prototype._get = function (type, params) {
@@ -113,9 +122,11 @@ GoogleContacts.prototype._get = function (type, params) {
         'Authorization': 'GoogleLogin auth=' + this.googleAuth.getAuthId()
       }
     },
+
     function (response) {
       this._onResponse(request, response);
     }.bind(this)
+
   ).on('error', function (e) {
     // console.log('error getting stuff', e);
   });
