@@ -2,7 +2,7 @@
 /*global require: true, console: true */
 var IniReader = require('inireader').IniReader;
 var iniReader = new IniReader();
-var GoogleContacts = require('googlecontacts').GoogleContacts;
+var GoogleContacts = require('../index').GoogleContacts;
 var assert = require('assert');
 var concatsTested = false, groupsTested = false;
 iniReader.on('fileParse', function () {
