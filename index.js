@@ -1,4 +1,4 @@
-/*jslint indent: 2, nomen: true */
+/*jslint indent: 2*/
 /*global console: true, require: true, exports */
 var EventEmitter = require('events').EventEmitter;
 var GoogleClientLogin = require('googleclientlogin').GoogleClientLogin;
@@ -42,23 +42,23 @@ GoogleContacts.prototype.auth = function (cb) {
 };
 GoogleContacts.prototype.getContacts = function (params) {
   this.auth(function () {
-    this._getContacts(params);
+    this.requestContacts(params);
   }.bind(this));
 };
 GoogleContacts.prototype.getContactGroups = function (projection, limit) {
   this.auth(function () {
-    this._getContactGroups(projection, limit);
+    this.requestContactGroups(projection, limit);
   }.bind(this));
 };
-GoogleContacts.prototype._onContactsReceived = function (response, data) {
+GoogleContacts.prototype.onContactsReceived = function (response, data) {
   this.contacts = JSON.parse(data);
   this.emit('contactsReceived', this.contacts);
 };
-GoogleContacts.prototype._onContactGroupsReceived = function (response, data) {
+GoogleContacts.prototype.onContactGroupsReceived = function (response, data) {
   this.contactGroups = JSON.parse(data);
   this.emit('contactGroupsReceived', this.contactGroups);
 };
-GoogleContacts.prototype._onResponse = function (request, response) {
+GoogleContacts.prototype.onResponse = function (request, response) {
   var data = '', finished = false, onFinish;
   // Thats a hack, because the end event is not emitted, but close yes.
   // https://github.com/joyent/node/issues/728
@@ -67,9 +67,9 @@ GoogleContacts.prototype._onResponse = function (request, response) {
       finished = true;
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (request.path.indexOf(contactsUrl) === 0) {
-          this._onContactsReceived(response, data);
+          this.onContactsReceived(response, data);
         } else if (request.path.indexOf(contactGroupsUrl) === 0) {
-          this._onContactGroupsReceived(response, data);
+          this.onContactGroupsReceived(response, data);
         }
       } else {
         var error = new Error('Bad response status: ' + response.statusCode);
@@ -88,7 +88,7 @@ GoogleContacts.prototype._onResponse = function (request, response) {
   response.on('close', onFinish);
   response.on('end', onFinish);
 };
-GoogleContacts.prototype._buildPath = function (type, params) {
+GoogleContacts.prototype.buildPath = function (type, params) {
   var path, request, projection, pathItems;
   params = params || {};
   pathItems = [];
@@ -111,12 +111,12 @@ GoogleContacts.prototype._buildPath = function (type, params) {
   // path += this.conf.email + '/' + projection + '?' + querystring.stringify(params);
   return path;
 };
-GoogleContacts.prototype._get = function (type, params) {
+GoogleContacts.prototype.get = function (type, params) {
   var request = require('https').request(
     {
       host: 'www.google.com',
       port: 443,
-      path: this._buildPath(type, params),
+      path: this.buildPath(type, params),
       method: 'GET',
       headers: {
         'Authorization': 'GoogleLogin auth=' + this.googleAuth.getAuthId()
@@ -124,7 +124,7 @@ GoogleContacts.prototype._get = function (type, params) {
     },
 
     function (response) {
-      this._onResponse(request, response);
+      this.onResponse(request, response);
     }.bind(this)
 
   ).on('error', function (e) {
@@ -132,10 +132,10 @@ GoogleContacts.prototype._get = function (type, params) {
   });
   request.end();
 };
-GoogleContacts.prototype._getContacts = function (params) {
-  this._get(typeContacts, params);
+GoogleContacts.prototype.requestContacts = function (params) {
+  this.get(typeContacts, params);
 };
-GoogleContacts.prototype._getContactGroups = function (projection, params) {
-  this._get(typeGroups, params);
+GoogleContacts.prototype.requestContactGroups = function (projection, params) {
+  this.get(typeGroups, params);
 };
 exports.GoogleContacts = GoogleContacts;
