@@ -28,8 +28,7 @@ c.getContactGroups({
 
 
 getContacts and getContactGroups has two optional parameter:
-  projection and limit
-http://code.google.com/apis/contacts/docs/3.0/reference.html#Projections
-limit max how many elements do you wan't to receive
+* projection
+* any other parameter listed here: https://developers.google.com/google-apps/contacts/v3/reference#Projections
 
 other functionallities coming soon..
