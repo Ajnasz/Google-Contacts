@@ -44,9 +44,9 @@ GoogleContacts.prototype.getContacts = function (params) {
 		this.requestContacts(params);
 	}.bind(this));
 };
-GoogleContacts.prototype.getContactGroups = function (projection, limit) {
+GoogleContacts.prototype.getContactGroups = function (params) {
 	this.auth(function () {
-		this.requestContactGroups(projection, limit);
+		this.requestContactGroups(params);
 	}.bind(this));
 };
 GoogleContacts.prototype.onContactsReceived = function (response, data) {
@@ -129,7 +129,7 @@ GoogleContacts.prototype.get = function (type, params) {
 GoogleContacts.prototype.requestContacts = function (params) {
 	this.get(typeContacts, params);
 };
-GoogleContacts.prototype.requestContactGroups = function (projection, params) {
+GoogleContacts.prototype.requestContactGroups = function (params) {
 	this.get(typeGroups, params);
 };
 exports.GoogleContacts = GoogleContacts;
