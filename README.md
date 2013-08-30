@@ -28,7 +28,7 @@ c.getContactGroups({
 });
 ```
 
-getContacts and getContactGroups has two optional parameter:
+_getContacts()_ and _getContactGroups()_ can get the following parameters:
 * projection
 * any other parameter listed here: https://developers.google.com/google-apps/contacts/v3/reference#Projections
 
