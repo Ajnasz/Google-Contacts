@@ -19,11 +19,11 @@ c.on('contactGroupsReceived', function (contactGroups) {
 });
 c.getContacts({
     projection: 'thin',
-    limit: 100
+    'max-results': 100
 });
 c.getContactGroups({
     projection: 'thin',
-    limit: 200
+    'max-results': 200
 });
 
 
