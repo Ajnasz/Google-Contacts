@@ -3,6 +3,7 @@ Class for Node.js (3.*) to download google contacts as json
 
 How to use:
 
+```js
 var GoogleContacts = require('googlecontacts').GoogleContacts;
 var c = new GoogleContacts({
     email: 'you@exmaple.com',
@@ -19,17 +20,16 @@ c.on('contactGroupsReceived', function (contactGroups) {
 });
 c.getContacts({
     projection: 'thin',
-    limit: 100
+    'max-results': 100
 });
 c.getContactGroups({
     projection: 'thin',
-    limit: 200
+    'max-results': 200
 });
+```
 
-
-getContacts and getContactGroups has two optional parameter:
-  projection and limit
-http://code.google.com/apis/contacts/docs/3.0/reference.html#Projections
-limit max how many elements do you wan't to receive
+_getContacts()_ and _getContactGroups()_ can get the following parameters:
+* projection
+* any other parameter listed here: https://developers.google.com/google-apps/contacts/v3/reference#Projections
 
 other functionallities coming soon..
