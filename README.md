@@ -4,7 +4,8 @@ Class for Node.js (3.*) to download google contacts as json
 How to use:
 
 ```js
-var GoogleContacts = require('googlecontacts').GoogleContacts;
+var GoogleContacts = require('googlecontacts').GoogleContacts,
+    util = require('util');
 var c = new GoogleContacts({
     email: 'you@exmaple.com',
     password: 'password'
@@ -13,10 +14,10 @@ c.on('error', function (e) {
     console.log('error', e);
 });
 c.on('contactsReceived', function (contacts) {
-    console.log('contacts: ' + contacts);
+    console.log('contacts: ', util.inspect(contacts, {depth:null}));
 });
 c.on('contactGroupsReceived', function (contactGroups) {
-    console.log('groups: ' + contactGroups);
+    console.log('groups: ', util.inspect(contactGroups, {depth:null}));
 });
 c.getContacts({
     projection: 'thin',
