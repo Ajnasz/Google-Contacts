@@ -43,6 +43,13 @@ Contact Stream
 You can handle contacts as streams.
 
 ```js
+var module = require('googlecontacts'),
+    cfg = {
+        email: 'you@exmaple.com',
+        password: 'password',
+        test_contact_id: '12345' // you can parse contact id from contacts list
+    };
+
 contactGroupsStream = new module.GoogleContactsGroupsStream({
     email: cfg.email,
     password: cfg.password
