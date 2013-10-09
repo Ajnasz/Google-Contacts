@@ -39,9 +39,30 @@ iniReader.on('fileParse', function () {
 	});
 	c.getContacts();
 	c.getContactGroups();
+
+	/*
+	var a = new module.GoogleContactsGroupsStream({
+		email: cfg.email,
+		password: cfg.password
+	});
+	*/
+	var b = new module.GoogleContactStream({
+		email: cfg.email,
+		password: cfg.password,
+		contactId: 'ed6cce289f381c4'
+	});
+
+	b.on('data', function (chunk) {
+		var data = JSON.parse(chunk);
+		console.log('CONTACT', require('util').inspect(data));
+	});
 });
+
 iniReader.load('/home/ajnasz/.google.ini');
+
 process.on('exit', function () {
+	"use strict";
+
 	if (!concatsTested) {
 		throw new Error('contact test failed');
 	}

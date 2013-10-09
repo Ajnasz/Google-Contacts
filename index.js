@@ -2,6 +2,7 @@
 var EventEmitter = require('events').EventEmitter;
 var GoogleClientLogin = require('googleclientlogin').GoogleClientLogin;
 var util = require('util');
+var stream = require('stream');
 var querystring = require('querystring');
 var url = require('url');
 
@@ -213,4 +214,101 @@ GoogleContacts.prototype.requestContact = function (params) {
 	this.get(typeContact, params);
 };
 
+function GoogleContactsStream(opt) {
+	"use strict";
+
+	this.streamType = opt.streamType;
+	delete opt.streamType;
+
+	opt.objectMode = true;
+
+	stream.Readable.call(this, opt);
+	this.hasData = false;
+	this.contacts = new GoogleContacts(opt);
+
+	this.contacts.on('contactsReceived', this.onContactsReceived.bind(this));
+	this.contacts.on('contactReceived', this.onContactReceived.bind(this));
+	this.contacts.on('contactGroupsReceived', this.onGroupsReceived.bind(this));
+	if (this.streamType === typeContacts) {
+		this.contacts.getContacts();
+	} else if (this.streamType === typeGroups) {
+		this.contacts.getContactGroups();
+	} else if (this.streamType === typeContact) {
+		this.contacts.getContact();
+	}
+}
+
+util.inherits(GoogleContactsStream, stream.Readable);
+
+GoogleContactsStream.prototype.onDataReceived = function (response) {
+	"use strict";
+
+	response.feed.entry.forEach(function (entry) {
+		this.push(JSON.stringify(entry));
+	}.bind(this));
+
+	this.push(null);
+
+	this.hasData = true;
+};
+
+GoogleContactsStream.prototype.onContactReceived = function (contact) {
+	"use strict";
+
+	if (this.streamType !== typeContact) {
+		throw new Error('Contacts can not be received for group stream');
+	}
+
+	this.push(JSON.stringify(contact.entry));
+	this.push(null);
+	this.hasData = true;
+
+	// this.onDataReceived(contact);
+};
+GoogleContactsStream.prototype.onContactsReceived = function (contacts) {
+	"use strict";
+
+	if (this.streamType !== typeContacts) {
+		throw new Error('Contacts can not be received for group stream');
+	}
+
+	this.onDataReceived(contacts);
+};
+GoogleContactsStream.prototype.onGroupsReceived = function (groups) {
+	"use strict";
+
+	if (this.streamType !== typeGroups) {
+		throw new Error('Contact groups can not be received for contact stream');
+	}
+
+	this.onDataReceived(groups);
+};
+
+GoogleContactsStream.prototype._read = function () {
+	"use strict";
+
+	return this.hasData;
+};
+
 exports.GoogleContacts = GoogleContacts;
+exports.GoogleContactsGroupsStream = function (opt) {
+	"use strict";
+
+	opt.streamType = typeGroups;
+	var stream = new GoogleContactsStream(opt);
+	return stream;
+};
+exports.GoogleContactsStream = function (opt) {
+	"use strict";
+
+	opt.streamType = typeContacts;
+	var stream = new GoogleContactsStream(opt);
+	return stream;
+};
+exports.GoogleContactStream = function (opt) {
+	"use strict";
+
+	opt.streamType = typeContact;
+	var stream = new GoogleContactsStream(opt);
+	return stream;
+};
