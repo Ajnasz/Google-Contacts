@@ -129,6 +129,10 @@ GoogleContacts.prototype.onResponse = function (type, response) {
 GoogleContacts.prototype.buildPath = function (type, params) {
 	"use strict";
 
+	if (!type) {
+		throw new Error('Type must be defined.');
+	}
+
 	var path, request, projection, pathItems, gUrl;
 	params = params || {};
 	pathItems = [];
@@ -146,6 +150,8 @@ GoogleContacts.prototype.buildPath = function (type, params) {
 		gUrl = contactsUrl;
 	} else if (type === typeContact) {
 		gUrl = contactUrl;
+	} else {
+		throw new Error('Undefined type');
 	}
 
 	pathItems.push(gUrl);
@@ -206,3 +212,5 @@ GoogleContacts.prototype.requestContact = function (params) {
 
 	this.get(typeContact, params);
 };
+
+exports.GoogleContacts = GoogleContacts;
