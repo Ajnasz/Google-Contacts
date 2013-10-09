@@ -8,7 +8,8 @@ var concatsTested = false, groupsTested = false;
 iniReader.on('fileParse', function () {
 	"use strict";
 
-	var cfg = this.param('account'), c;
+	var cfg = this.param('account'), c,
+		contactGroupsStream, contactsStream, contactStream;
 	c = new GoogleContacts({
 		email: cfg.email,
 		password: cfg.password
@@ -37,24 +38,44 @@ iniReader.on('fileParse', function () {
 		assert.ok(typeof contactGroups === 'object', 'Contact groups is not an object');
 		groupsTested = true;
 	});
+
 	c.getContacts();
 	c.getContactGroups();
 
-	/*
-	var a = new module.GoogleContactsGroupsStream({
+	contactGroupsStream = new module.GoogleContactsGroupsStream({
 		email: cfg.email,
 		password: cfg.password
 	});
-	*/
-	var b = new module.GoogleContactStream({
+
+	contactStream = new module.GoogleContactStream({
 		email: cfg.email,
 		password: cfg.password,
-		contactId: 'ed6cce289f381c4'
+		contactId: cfg.test_contact_id
 	});
 
-	b.on('data', function (chunk) {
+	contactsStream = new module.GoogleContactsStream({
+		email: cfg.email,
+		password: cfg.password
+	});
+
+	contactGroupsStream.on('data', function (chunk) {
 		var data = JSON.parse(chunk);
-		console.log('CONTACT', require('util').inspect(data));
+		console.log(data);
+		assert.ok(data.category[0].scheme, 'http://schemas.google.com/g/2005#kind');
+		assert.ok(data.category[0].term, 'http://schemas.google.com/contact/2008#group');
+	});
+
+	contactStream.on('data', function (chunk) {
+		var data = JSON.parse(chunk);
+		assert.ok(data.category[0].scheme, 'http://schemas.google.com/g/2005#kind');
+		assert.ok(data.category[0].term, 'http://schemas.google.com/contact/2008#contact');
+		assert.ok(data.xmlns$gContact, 'http://schemas.google.com/contact/2008');
+	});
+
+	contactsStream.on('data', function (chunk) {
+		var data = JSON.parse(chunk);
+		assert.ok(data.category[0].scheme, 'http://schemas.google.com/g/2005#kind');
+		assert.ok(data.category[0].term, 'http://schemas.google.com/contact/2008#contact');
 	});
 });
 
