@@ -60,7 +60,7 @@ iniReader.on('fileParse', function () {
 
 	contactGroupsStream.on('data', function (chunk) {
 		var data = JSON.parse(chunk);
-		console.log(data);
+
 		assert.ok(data.category[0].scheme, 'http://schemas.google.com/g/2005#kind');
 		assert.ok(data.category[0].term, 'http://schemas.google.com/contact/2008#group');
 	});

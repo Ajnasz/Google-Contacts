@@ -138,11 +138,12 @@ GoogleContacts.prototype.buildPath = function (type, params) {
 	params = params || {};
 	pathItems = [];
 	params.alt = 'json';
-	projection = projectionThin;
 
 	if (params.projection) {
 		projection = params.projection;
 		delete params.projection;
+	} else {
+		projection = projectionThin;
 	}
 
 	if (type === typeGroups) {
