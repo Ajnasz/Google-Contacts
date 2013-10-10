@@ -1,0 +1,32 @@
+{
+  "name": "Google-Contacts",
+  "version": "0.0.0",
+  "description": "Simple library to handle google contacts",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "googleclientlogin": "~0.2.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node tests/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Ajnasz/Google-Contacts.git"
+  },
+  "keywords": [
+    "google",
+    "contacts",
+    "group",
+    "contact",
+    "stream"
+  ],
+  "author": "Koszti Lajos",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Ajnasz/Google-Contacts/issues"
+  }
+}
