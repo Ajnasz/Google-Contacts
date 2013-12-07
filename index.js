@@ -16,17 +16,17 @@
  * more fields than can be returned in a single response, the API truncates the feed and adds 
  * a "Next" link that allows you to request the rest of the response.
  */
-var EventEmitter = require('events').EventEmitter,
-  _ = require('underscore'),
-  qs = require('querystring'),
-  util = require('util'),
-  url = require('url'),
-  https = require('https'),
-  querystring = require('querystring');
+var EventEmitter = Npm.require('events').EventEmitter,
+  _ = Npm.require('underscore'),
+  qs = Npm.require('querystring'),
+  util = Npm.require('util'),
+  url = Npm.require('url'),
+  https = Npm.require('https'),
+  querystring = Npm.require('querystring');
 
-var GoogleContacts = function (opts) {
+GoogleContacts = function (opts) {
   if (typeof opts === 'string') {
-    opts = { token: opts }
+    opts = { token: opts };
   }
   if (!opts) {
     opts = {};
@@ -58,7 +58,7 @@ GoogleContacts.prototype._get = function (params, cb) {
     path: this._buildPath(params),
     method: 'GET',
     headers: {
-      'Authorization': 'OAuth ' + this.token 
+      'Authorization': 'OAuth ' + this.token
     }
   };
 
@@ -116,7 +116,7 @@ GoogleContacts.prototype.getContacts = function (cb, contacts) {
     if (!next) {
       cb(null, self.contacts);
     }
-  };
+  }
 };
 
 GoogleContacts.prototype._saveContactsFromFeed = function (feed) {
@@ -134,7 +134,7 @@ GoogleContacts.prototype._saveContactsFromFeed = function (feed) {
   });
   console.log(self.contacts);
   console.log(self.contacts.length);
-}
+};
 
 GoogleContacts.prototype._buildPath = function (params) {
   if (params.path) return params.path;
@@ -153,7 +153,7 @@ GoogleContacts.prototype._buildPath = function (params) {
 
   var path = '/m8/feeds/';
   path += params.type + '/';
-  path += params.email + '/'; 
+  path += params.email + '/';
   path += params.projection;
   path += '?' + qs.stringify(query);
 
@@ -172,7 +172,7 @@ GoogleContacts.prototype.refreshAccessToken = function (refreshToken, cb) {
     client_secret: this.consumerSecret,
     grant_type: 'refresh_token'
 
-  }
+  };
 
   var body = qs.stringify(data);
 
@@ -223,6 +223,4 @@ GoogleContacts.prototype.refreshAccessToken = function (refreshToken, cb) {
 
   req.write(body);
   req.end();
-}
-
-exports.GoogleContacts = GoogleContacts;
+};
