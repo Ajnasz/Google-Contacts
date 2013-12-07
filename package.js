@@ -7,5 +7,5 @@ Package.on_use(function (api) {
 });
 
 Npm.depends({
-  "underscore": ""
+  "underscore": "1.5.2"
 });
