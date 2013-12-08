@@ -62,7 +62,7 @@ GoogleContacts.prototype._get = function (params, cb) {
     }
   };
 
-  console.log(req);
+  // console.log(req);
 
   https.request(req, function (res) {
     var data = '';
@@ -96,6 +96,78 @@ GoogleContacts.prototype._get = function (params, cb) {
   }).end();
 };
 
+GoogleContacts.prototype._getPhotoData = function (params, cb) {
+  var self = this;
+
+  if (typeof params === 'function') {
+    cb = params;
+    params = {};
+  }
+
+  var req = {
+    host: 'www.google.com',
+    port: 443,
+    path: this._buildPath(params),
+    method: 'GET',
+    headers: {
+      'Authorization': 'OAuth ' + this.token
+    }
+  };
+
+  // console.log(req);
+
+  https.request(req, function (res) {
+    var data;
+    var dataType = false;
+    // var data = new Buffer();
+
+    res.on('end', function () {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        var error = new Error('Bad client request status: ' + res.statusCode);
+        return cb(error);
+      }
+      try {
+        // console.log('end: ', data.length);
+        cb(null, data);
+      }
+      catch (err) {
+        cb(err);
+      }
+    });
+
+    res.on('data', function (chunk) {
+      // console.log(req.path, " : ", chunk.toString().length, ": ", chunk.length);
+      if (dataType) {
+        chunk_buffer = new Buffer(chunk, 'binary');
+        // data += chunk;
+        data = Buffer.concat([data, chunk_buffer]);
+      } else {
+        data = new Buffer(chunk, 'binary');
+        dataType = true;
+        // console.log('start: ');
+      }
+      // console.log('chunk: ', chunk.length);
+    });
+
+    res.on('error', function (err) {
+      cb(err);
+    });
+
+    //res.on('close', onFinish);
+  }).on('error', function (err) {
+    cb(err);
+  }).end();
+};
+
+GoogleContacts.prototype.getPhoto = function (path, cb) {
+  var self = this;
+
+  this._getPhotoData({path: path}, receivedPhotoData);
+  function receivedPhotoData(err, data) {
+    cb(err, data);
+  }
+};
+
 GoogleContacts.prototype.getContacts = function (cb, contacts) {
   var self = this;
 
@@ -122,17 +194,29 @@ GoogleContacts.prototype.getContacts = function (cb, contacts) {
 GoogleContacts.prototype._saveContactsFromFeed = function (feed) {
   var self = this;
   //console.log(feed);
+  var i = 0;
   feed.entry.forEach(function (entry) {
     try {
       var name = entry.title['$t'];
       var email = entry['gd$email'][0].address; // only save first email
-      self.contacts.push({ name: name, email: email });
+      var photoUrl;
+      var mimeType;
+      entry.link.some(function(link) {
+        if ((link.rel) && (link.rel.indexOf('#photo') !== -1) && (link.type.indexOf('image') !== -1)){
+          photoUrl = link.href;
+          mimeType = link.type;
+          // console.log(link);
+        }
+      });
+      if (photoUrl){
+        self.contacts.push({ name: name, email: email, photoUrl: photoUrl, mime_type: mimeType});
+      }
     }
     catch (e) {
       // property not available...
     }
   });
-  console.log(self.contacts);
+  // console.log(self.contacts);
   console.log(self.contacts.length);
 };
 

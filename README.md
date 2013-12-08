@@ -1,31 +1,25 @@
-Node.js wrapper for the Google Contacts API.
+Meteor wrapper for the Google Contacts API.
 
 # Install
 
-    npm install google-contacts
+  mrt add google-contacts
 
 # Usage
 
 ```javascript
-var GoogleContacts = require('googlecontacts').GoogleContacts;
-var c = new GoogleContacts({
-  token: 'oauth2 token...'
+opts =
+        email: user.services.google.email
+        consumerKey: Meteor.settings.knotable_google_id
+        consumerSecret: Meteor.settings.knotable_google_secret
+        token: user.services.google.accessToken
+        refreshToken: user.services.google.refreshToken
+gcontacts = new GoogleContacts opts
+gcontacts.getContacts(function(err, contacts){
+  // Do what you want to do with contacts
+  // console.log(contacts);
 });
-c.on('error', function (e) {
-  console.log('error', e);
+
+gcontacts.getPhoto(contact.photoUrl, function(err, binaryData){
+  // Save binaryData to you DB or file.
 });
-c.on('contactsReceived', function (contacts) {
-  console.log('contacts: ' + contacts);
-});
-c.on('contactGroupsReceived', function (contactGroups) {
-  console.log('groups: ' + contactGroups);
-});
-c.getContacts('thin', 100);
-c.getContactGroups('thin', 200);
 ```
-
-getContacts and getContactGroups has two optional parameter:
-  projection and limit
-http://code.google.com/apis/contacts/docs/3.0/reference.html#Projections
-limit max how many elements do you wan't to receive
-
