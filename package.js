@@ -1,4 +1,6 @@
-Package.describe("Google-Contacts package");
+Package.describe({
+  summary: "Google-Contacts package"
+});
 
 Package.on_use(function (api) {
   api.add_files(['index.js'], 'server');
