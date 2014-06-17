@@ -8,11 +8,11 @@ Meteor wrapper for the Google Contacts API.
 
 ```javascript
 opts =
-  email: user.services.google.email
-  consumerKey: Meteor.settings.knotable_google_id
-  consumerSecret: Meteor.settings.knotable_google_secret
-  token: user.services.google.accessToken
-  refreshToken: user.services.google.refreshToken
+  email: userEmail
+  consumerKey: googleId
+  consumerSecret: googleSecret
+  token: googleAccessToken
+  refreshToken: googleRefreshToken
 
 gcontacts = new GoogleContacts opts
 
