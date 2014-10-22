@@ -1,9 +1,9 @@
 {
   "name": "google-contacts",
   "description": "API wrapper for Google Contacts",
-  "homepage": "https://github.com/iyou/Meteor-Google-Contacts",
-  "author": "Longly <forallandiyou@gmail.com>",
-  "version": "0.2.0",
-  "git": "https://github.com/iyou/Meteor-Google-Contacts.git",
+  "homepage": "https://github.com/Vitarch/Meteor-Google-Contacts",
+  "author": "Christie <christie.ewen@gmail.com>",
+  "version": "0.3.0",
+  "git": "https://github.com/vitarch/Meteor-Google-Contacts.git",
   "packages": {}
 }
