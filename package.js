@@ -1,7 +1,7 @@
 Package.describe({
   summary: "Google-Contacts package",
   version: "0.3.0",
-  git: "https://github.com/vitarch/Meteor-Google-Contacts.git",
+  git: "https://github.com/Vitarch/Meteor-Google-Contacts.git",
   name: "vitarch:google-contacts"
 });
 
