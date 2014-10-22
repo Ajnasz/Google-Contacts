@@ -1,8 +1,8 @@
 Package.describe({
   summary: "Google-Contacts package",
-  version: "0.2.0",
-  git: "https://github.com/iyou/Meteor-Google-Contacts.git",
-  name: "long:google-contacts"
+  version: "0.3.0",
+  git: "https://github.com/vitarch/Meteor-Google-Contacts.git",
+  name: "vitarch:google-contacts"
 });
 
 Package.on_use(function (api) {
@@ -11,7 +11,7 @@ Package.on_use(function (api) {
     api.export('GoogleContacts');
 
   if(api.versionsFrom){
-    api.versionsFrom('METEOR@0.9.0');
+    api.versionsFrom('METEOR@0.9.4');
   }
 });
 
