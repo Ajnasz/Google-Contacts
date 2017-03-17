@@ -2,9 +2,12 @@ Class for Node.js to download google contacts as json
 
 
 How to use:
+```
+$ npm install https://github.com/Ajnasz/Google-Contacts
+```
 
 ```js
-var GoogleContacts = require('googlecontacts').GoogleContacts,
+var GoogleContacts = require('Google-Contacts').GoogleContacts,
     util = require('util');
 var c = new GoogleContacts({
     email: 'you@exmaple.com',
@@ -43,7 +46,7 @@ Contact Stream
 You can handle contacts as streams.
 
 ```js
-var module = require('googlecontacts'),
+var module = require('Google-Contacts'),
     cfg = {
         email: 'you@exmaple.com',
         password: 'password',
